@@ -1,0 +1,65 @@
+Instruction and requirement
+
+Write a pattern matcher in Common Lisp. It should be invoked by calling the function match with two parameters: a pattern and a fact. It should return a list of variable-value bindings if the match succeeds (or T if it succeeds with no bindings), or nil if the pattern does not match the fact. The binding list returned can be in any order. A pattern matches a fact if, when all variables in the pattern are replaced with the values they are bound to in the bing list, then the pattern will be identical to the fact.
+ 
+
+The syntax for facts is any valid Lisp structure. The syntax for patterns includes any fact. In addition, patterns can include variables, not predicates, less-than predicates, and greater-than predicates. These variables and predicates are denoted as Lisp symbols starting with =, !, <, and >, respectively. For example, the pattern:
+
+
+(elephant (color =c) (size =s))
+
+
+would match any of these facts:
+
+
+(elephant (color pink) (size tiny))
+
+(elephant (color white) (size universal))
+
+(elephant (color grey) (size 12))
+
+
+Furthermore, the matcher should return bindings as follows:
+
+
+? (match '(elephant (color =c) (size =s)) '(elephant (color grey) (size 12)))
+
+((=s . 12) (=c . grey))
+
+
+All occurrences of the same variable must match the same value. For example, the pattern:
+
+
+(elephants (=name (color =c)) (=anothername (color =c)))
+
+
+would only match if the two values after the two occurrences of the atom color were the same.
+
+For a variable, say =x, the predicates !x, <x, and >x restrict the match to succeed only if the corresponding value is not equal, less than, or greater than the existing binding of =x. If a not predicate, less-than predicate, or greater-than predicate appears in a pattern before the corresponding variable is bound, the match should fail. For example, the pattern:
+
+
+(elephants (sally (color =c) (size =s) (mood =m)) (rose (color =c) (size <s) (mood !m)))
+
+
+would only match successfully if sally and rose are the same color,  rose’s size is smaller than sally’s, and rose is in a different mood than sally. If successful, the match would return the bindings of =c, =s, and =m, such as:
+
+
+((=m . happy) (=s . 12) (=c . white))
+
+
+assuming that sally is a happy, size 12, white elephant, and rose is a white elephant smaller than size 12 and not happy.
+
+Finally, your patterns should also handle the & operator. This allows multiple pattern elements to match the same fact element. For example,
+
+
+(elephants (=elephant1 (color =c)) ((& =elephant2 !elephant1) (color =c)))
+
+
+would only match if the two elephants were of the same color with different names, and would return bindings for the color and names of both elephants.
+
+The pattern (&) matches any value.
+
+Here's another example that combines predicates and the & operator. The following pattern will only match a three-element list of numbers such that the third is greater than the first but less than the second, and return bindings for all three:
+
+
+(=x =y (& =z >x <y))
