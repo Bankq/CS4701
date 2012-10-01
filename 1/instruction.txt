@@ -1,5 +1,4 @@
 Instruction and requirement
-
 Write a pattern matcher in Common Lisp. It should be invoked by calling the function match with two parameters: a pattern and a fact. It should return a list of variable-value bindings if the match succeeds (or T if it succeeds with no bindings), or nil if the pattern does not match the fact. The binding list returned can be in any order. A pattern matches a fact if, when all variables in the pattern are replaced with the values they are bound to in the bing list, then the pattern will be identical to the fact.
  
 

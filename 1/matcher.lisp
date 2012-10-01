@@ -1,28 +1,63 @@
-(defun hello (str)
-  (if (string= "h" (car str))
-      (car str)
-      (cdr str)))
+;;=================================================
+;;=================================================
 
-(defun fib (n)
-  (do ((iter 1 (+ 1 iter))
-       (cur 0 next)
-       (next 1 (+ cur next)))
-      ((= n iter) cur)
-    (print cur)))
+(defun match (pat exp)
+  "Top function:
+   The matcher should return bindings as follows:
+   (match '(elephant (color =c) (size =s)) 
+          '(elephant (color grey) (size 12)))"
+  (let ((binding-list (make-array 100 :fill-pointer 0 :adjustable t)))
+    (list-match pat exp binding-list)
+    binding-list))
 
-(defun mypair (Start End)
-  (loop
-     for x from 1 to Start
-     for y from End downto 1
-       collect (list x y)))
+(defun atom-match (pat exp bdl)
+  "Match two atom var.
+   if matched add to the binding list"
+  (if (plain-pat pat)
+      (insert pat exp bdl)
+      (insert "oh" "no" bdl))
 
-(defvar *num* 20)
-(defun myloop ()
-  (loop
-       for x from 1 to *num*
-       for y from 1 to *num*
-       for z from 40 downto *num*
-       collect (+ x y z)))
+  )
+
+(defun list-match (pat exp bdl)
+  (cond ((null pat) (if (null exp)
+                        t
+                        nil))
+        (t (atom-match (car pat) (car exp) bdl)
+           (list-match (cdr pat) (cdr exp) bdl)))
+)
+
+
+(defun plain-pat (pat)
+  "Test if pattern if a plain var"
+  (if (null (find (char (write-to-string pat) 0) 
+                  (vector "=" "!" "&" ">" "<")))      
+      t
+      nil))
+
+(defun insert (pat exp bdl)
+  (vector-push (cons pat exp) bdl))
+
+
+(defun to-list (a)
+  (let ((l '()))
+    (every #'(lambda (x) (setq l (cons x l)))
+           a)
+    l))
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
