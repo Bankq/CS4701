@@ -8,23 +8,23 @@
           '(elephant (color grey) (size 12)))"
   (let ((binding-list (make-array 100 :fill-pointer 0 :adjustable t)))
     (list-match pat exp binding-list)
-    binding-list))
+    (to-list binding-list)))
 
 (defun atom-match (pat exp bdl)
   "Match two atom var.
    if matched add to the binding list"
-  (if (plain-pat pat)
-      (insert pat exp bdl)
-      (insert "oh" "no" bdl))
-
-  )
+  (insert pat exp bdl)
+)
 
 (defun list-match (pat exp bdl)
   (cond ((null pat) (if (null exp)
                         t
                         nil))
-        (t (atom-match (car pat) (car exp) bdl)
-           (list-match (cdr pat) (cdr exp) bdl)))
+        (t (loop for pat-item in pat
+             for exp-item in exp
+                if (atom pat-item)
+                do (atom-match pat-item exp-item bdl)
+                else do (list-match pat-item exp-item bdl))))
 )
 
 
