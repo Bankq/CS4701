@@ -7,33 +7,147 @@
    (match '(elephant (color =c) (size =s)) 
           '(elephant (color grey) (size 12)))"
   (let ((binding-list (make-array 100 :fill-pointer 0 :adjustable t)))
-    (list-match pat exp binding-list)
-    (to-list binding-list)))
+    (catch 'fail
+      (list-match pat exp binding-list)
+      (to-list binding-list)
+      )))
+
 
 (defun atom-match (pat exp bdl)
   "Match two atom var.
    if matched add to the binding list"
-  (insert pat exp bdl)
-)
+  (cond ((not (atom pat)) (throw 'fail nil))
+        ((is-pattern-equal pat) (equal-pattern-match pat exp bdl))
+        ((is-pattern-not-equal pat) (not-equal-pattern-match pat exp bdl))
+        ((is-pattern-greater pat) (greater-pattern-match pat exp bdl))
+        ((is-pattern-less pat) (less-pattern-match pat exp bdl))
+        (t (plain-match pat exp))))
+
 
 (defun list-match (pat exp bdl)
-  (cond ((null pat) (if (null exp)
-                        t
-                        nil))
+  (cond ((null pat) (if (null exp) t (throw 'fail nil)))
+        ((is-pattern-any pat) (any-pattern-match pat exp bdl))
+        ((not (equal (length pat) (length exp))) (throw 'fail nil))
         (t (loop for pat-item in pat
-             for exp-item in exp
-                if (atom pat-item)
-                do (atom-match pat-item exp-item bdl)
-                else do (list-match pat-item exp-item bdl))))
-)
+              for exp-item in exp
+              if (atom pat-item)
+              do (atom-match pat-item exp-item bdl)
+              else do (list-match pat-item exp-item bdl)))))
 
-
-(defun plain-pat (pat)
-  "Test if pattern if a plain var"
-  (if (null (find (char (write-to-string pat) 0) 
-                  (vector "=" "!" "&" ">" "<")))      
+(defun is-pattern-any (pat)
+  "Check if a pattern start with a '&' "
+  (if (equal "&" (string (car pat)))
       t
       nil))
+
+(defun is-pattern-equal (pat)
+  "Check if a pattern start with a ="
+  (cond ((symbolp pat)
+         (if (equal #\= (char (string pat) 0))
+             t
+             nil))
+        (t nil)))
+
+(defun is-pattern-not-equal (pat)
+  "Check if a pattern start with a !"
+  (cond ((symbolp pat)
+         (if (equal #\! (char (string pat) 0))
+             t
+             nil))
+        (t nil)))
+
+(defun is-pattern-greater (pat)
+  "Check if a pattern start with a >"
+  (cond ((symbolp pat)
+         (if (equal #\> (char (string pat) 0))
+             t
+             nil))
+        (t nil)))
+
+(defun is-pattern-less (pat)
+  (cond ((symbolp pat)
+         (if (equal #\< (char (string pat) 0))
+             t
+             nil))
+        (t nil)))
+
+(defun is-pattern (pat pre)
+  (cond ((symbolp pat)
+         (if (equal pre (char (string pat) 0))
+             t
+             nil))
+        (t nil)))
+
+(defun plain-match (pat exp)
+  "match symbol name"
+  (if (equal pat exp)
+      t
+      (throw 'fail nil)))
+
+(defun any-pattern-match (pat exp bdl)
+  
+  )
+
+(defun equal-pattern-match (pat exp bdl)
+  "pattern looks like '=a'"
+  (cond ((is-bind-exist pat bdl)
+         (if (equal (find-binding pat bdl) exp)
+             t
+             (throw 'fail nil)))
+        (t (insert pat exp bdl)
+           t)))
+
+(defun not-equal-pattern-match (pat exp bdl)
+  "pattern looks like '!x'"
+  (cond ((not (is-bind-exist (fmt pat) bdl))
+         (throw 'fail nil))
+        (t (if (equal exp (find-binding (fmt pat) bdl))
+               (throw 'fail nil)
+               t))))
+
+(defun greater-pattern-match (pat exp bdl)
+  "pattern looks like '>x'"
+  (cond ((not (is-bind-exist (fmt pat) bdl))
+         (throw 'fail nil))
+        (t (let ((prev (find-binding (fmt pat) bdl)))
+             (if (and (numberp prev) (numberp exp))
+                 (if (> exp prev)
+                     t
+                     (throw 'fail nil))
+                 (throw 'fail nil))))))
+
+(defun less-pattern-match (pat exp bdl)
+  (cond ((not (is-bind-exist (fmt pat) bdl))
+         (throw 'fail nil))
+        (t (let ((prev (find-binding (fmt pat) bdl)))
+             (if (and (numberp prev) (numberp exp))
+                 (if (< exp prev)
+                     t
+                     (throw 'fail nil))
+                 (throw 'fail nil))))))
+
+(defun compare-match (pat exp bdl func)
+  (cond ((not (is-bind-exist (fmt pat) bdl))
+         (throw 'fail nil))
+        (t (let ((prev (find-binding (fmt pat) bdl)))
+             (if (and (numberp prev) (numberp exp))
+                 (funcall func exp prev)
+                 (throw 'fail nil))))))
+
+(defun is-bind-exist (pat bdl)
+  ""
+  (if (some #'(lambda(x)
+                (equal (car x) pat))
+            bdl)
+      t
+      nil))
+
+(defun find-binding (pat bdl)
+ (cdr (find pat bdl :key #'first)))
+
+(defun fmt (pat)
+  "format pattern !name(>name <name) to =name"
+  (intern (concatenate 'string "=" (string-upcase (subseq (string pat) 1)))))
 
 (defun insert (pat exp bdl)
   (vector-push (cons pat exp) bdl))
@@ -43,10 +157,9 @@
   (let ((l '()))
     (every #'(lambda (x) (setq l (cons x l)))
            a)
-    l))
-  
-
-
+    (if (equal 0 (length l))
+        t
+        l)))
 
 
 
