@@ -52,9 +52,10 @@
 ;; returns nil and it will be catched by the top
 ;; function.
 (defun do-match (pat exp bdl)
-  (if (not (list-match pat exp bdl))
-      (throw 'fail nil)
-      (to-list bdl)))
+  (if (list-match pat exp bdl)
+      (to-list bdl)
+      (throw 'fail nil)))
+
 ;;
 ;; atom-match is called when the pattern is an atom.
 ;; It will call different routine based on the predicateds.
@@ -98,7 +99,7 @@
         t ;;(&) can match any thing
         ;; the exp need to be matched by all the patterns after &
         (loop for rule in rules
-             always (atom-match rule exp bdl)))))
+             always (list-match rule exp bdl)))))
 ;;
 ;; =x pattern routine
 ;;
@@ -112,7 +113,7 @@
 ;;
 (defun not-equal-pattern-match (pat exp bdl)
   (if (is-bind-exist (fmt pat) bdl)
-      (equal exp (find-binding (fmt pat) bdl))
+      (not (equal exp (find-binding (fmt pat) bdl)))
       nil))
 ;;
 ;; >x <x pattern routine
@@ -147,7 +148,8 @@
   (intern (concatenate 'string "=" (string-upcase (subseq (string pat) 1)))))
 
 (defun insert (pat exp bdl)
-  (vector-push-extend (cons pat exp) bdl) t)
+  (vector-push-extend (cons pat exp) bdl) 
+  t)
 
 ;;
 ;; Turn the maintained array to a list
@@ -161,14 +163,22 @@
 ;; The test cases
 ;;
 (defun match-test ()
-  (let ((test-results 
-         '((match '(elephant (color =c) (size =s)) '(elephant (color grey) (size 12)))
-           (match '() '())
-           (match '(=1) '(1))
-           (match '(=a =b !b (& >a <b)) '(1 3 4 2))
-           (match '(&) '(a b c))
-           (not (match '(=a !a) '(1 1)))
-           (not (match '(=x >y =y) '(1 3 2)))
-           )))
-    (loop for i in test-results
-         always i)))
+  (loop for case in (list (match '(a b c) '(a b c))
+                          (not (match '(a b) '(c d)))
+                          (equal (match '(a =x b) '(a z b)) 
+                                 '((=X . Z)))
+                          (equal (match '(=x =y) '(a b)) 
+                                 '((=Y . B) (=X . A)))
+                          (not (match '(=x !x) '((a b) (a b))))
+                          (not (match '(!x =x) '(a a)))
+                          (equal (match '(=x =y <x >y) '(5 7 3 10)) 
+                                 '((=Y . 7) (=X . 5)))
+                          (equal (match '(=x =y (& <x >y =z)) '(5 1 3)) 
+                                 '((=Z . 3) (=Y . 1) (=X . 5)))
+                          (equal (match '(& =x =y) '(a b c))
+                                 '((=Y A B C) (=X A B C)))
+                          (equal (match '(a (& =x =y (& =z =w))) '(a b))
+                                 '((=W . B) (=Z . B) (=Y . B) (=X . B)))
+                          )
+       always case))
+
