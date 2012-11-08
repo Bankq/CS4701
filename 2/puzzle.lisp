@@ -1,19 +1,76 @@
+;;===============================================================
+;;                     8 Puzzle
+;;    W4701 Artificial Intelligence Homework 2, Fall 2012
+;;    Author: Hang Qian
+;;    UNI: hq2124
+;;    Contact: hq2124(at)columbia.edu
+;;     
+;;    A state of 8-puzzle problem can be viewed as
+;;         1 2 3
+;;         4 5 6
+;;         7 8 0
+;;    where 0 is the placeholder
+;;    We represent the state using a list
+;;    '(0 1 2 3 4 5 6 7 8)
+;;    An action is represent as ("MOVE")
+;;    e.g. (right 8) indicates move 8 to its right,
+;;    '(0 1 2 3 4 5 6 7 8) --("right")--> '(1 0 2 3 4 5 6 7 8)
+;;
+;;    Our goal is using a heuristic A* algorithm to find a solution to
+;;    goal state '(0 1 2 3 4 5 6 7 8)
+;;    
+;;
+;;    KNOWN ISSUE:
+;; 
+;;    The homework instruction requres that 
+;;    "Using the general search and graph search code as presented in class"
+;;    which help me write highly generic code and focusing on the problem dependent
+;;    implementations. However, it may cause some performance problem. To improve that
+;;    we can use some pruning skills. But it's not what we focused on. So when you try
+;;    complicated state, it may take long time to give the optimal solution.
+;; 
+;; 
+;;
+;; Copyright (c) 2012, Hang Qian
+;; All rights reserved.
+
+;; Redistribution and use in source and binary forms, with or without
+;; modification, are permitted provided that the following conditions are met: 
+
+;; 1. Redistributions of source code must retain the above copyright notice, this
+;;    list of conditions and the following disclaimer. 
+;; 2. Redistributions in binary form must reproduce the above copyright notice,
+;;    this list of conditions and the following disclaimer in the documentation
+;;    and/or other materials provided with the distribution. 
+
+;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+;; ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+;; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+;; DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+;; ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+;; (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+;; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+;; ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+;; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+;; The views and conclusions contained in the software and documentation are those
+;; of the authors and should not be interpreted as representing official policies, 
+;; either expressed or implied, of the FreeBSD Project.
+;;===============================================================
+
+
 ;; ==================================
 ;;  Problem dependent
 ;; ==================================
                                          
-;;
-;; A state of 8-puzzle problem can be viewed as
-;;      1 2 3
-;;      4 5 6
-;;      7 8 0
-;; where 0 is the placeholder
-;; We represent the state using a list
-;; '(0 1 2 3 4 5 6 7 8)
-;; An action is represent as ("MOVE")
-;; e.g. (right 8) indicates move 8 to its right,
-;; '(0 1 2 3 4 5 6 7 8) --("right")--> '(1 0 2 3 4 5 6 7 8)
 
+;; (8-puzzle STATE HEURISTIC)
+;; top function: given a initial state and a heuristic function
+;; function returns a list comprised of
+;; 1. move list
+;; 2. moves it took
+;; 3. states it expanded
 
 (defun 8-puzzle (state heuristic)
   (general-search state #'puzzle-successor #'puzzle-goalp :samep #'puzzle-samep :key heuristic))
@@ -61,17 +118,17 @@
     result))
 
 (defun misplaced (node)
-  "Heuristic function. Count how many tiles are misplaced"
+  "Misplaced heuristic function; Estimate by how many misplaced tile"
   (let ((state (node-state node))
         (g (node-path-cost node)))
     (+ g (count-misplaced state))))
 
-
 (defun count-misplaced (state)
+  "Count how many tiles are misplaced"
   (count-if-not #'(lambda (x) (= x (position x state))) state))
 
 (defun manhattan (node)
-  "Heuristic function. Count how many tiles are misplaced"
+  "Manhattan heuristic function. Estimate by the manhattan distance from current state to goal state"
   (let ((state (node-state node))
         (g (node-path-cost node)))
     (+ g (manhattan-distance state))))
@@ -102,12 +159,18 @@
                                       (elt (mapcar #'(lambda (e) (cadr e)) successors) 
                                            (random (length successors))))
                                     :depth (1- depth))))
-                                    
-(defun test ()
-  (loop for case in (random-case)
-         collect (list (cadr (8-puzzle case #'manhattan))
-                       (cadr (8-puzzle case #'misplaced)))))
-
+(defun test (depth)
+  "run five solvable case on test, each case with depth"
+  (loop for case in (random-case :depth depth)
+     do (progn (format t "~%CASE: ~a ~%" case)
+               (let ((result (8-puzzle case #'misplaced)))
+                 (format t "Misplaced   used ~d~T, expanded ~T~d~%" (cadr result) (caddr result)))
+               (let ((result (8-puzzle case #'misplaced)))
+                 (format t "Manhattan   used ~d~T, expanded ~T~d~%" (cadr result) (caddr result)))
+               (let ((result (8-puzzle case #'misplaced)))
+                 (format t "Extracredit used ~d~T, expanded ~T~d~%" (cadr result) (caddr result))))))
+               
+                       
 ;; ===================================
 ;;  General search 
 ;; ===================================
@@ -258,11 +321,7 @@ queue's enqueuing function. Returns the altered queue."
 (defun make-heap (&optional (size 100))
   (make-array size :fill-pointer 0 :adjustable t))
 
-
 (defstruct node 
   state (parent nil) (action nil) (path-cost 0) (depth 0))
-
-
-
 
 (provide 'puzzle)
