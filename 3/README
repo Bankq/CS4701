@@ -1,0 +1,26 @@
+Write an automated theorem prover (ATP) for First-Order Logic (FOL). Your function
+(atp kb nq) takes the two arguments: KB = a list of sentences
+considered to be axioms represented in Skolem Normal Form (SNF), and nq = a sentence also in SNF representing the negated version of the sentence to be proven.
+ 
+
+You are not required to write code to convert any FOL sentence into SNF. Rather, your ATP
+can assume that its inputs are already in SNF.
+ 
+
+You must define your representation of SNF clauses including predicates, variables, constants, and Skolem functions.
+ 
+
+You must implement a unification function used by your ATP to execute the resolution inference rule.
+ 
+
+Your ATP should return the list of resolutions (each resolution is a triple (clause1 clause2 resolvent)) used to produce the NIL resolvent if the query (~nq) is true based on KB, or NIL otherwise.
+ 
+
+Your ATP should use heuristics and pruning strategies to guide its selection of clauses.
+ 
+
+Your assignment should be well documented and include several sample runs with English translations of the theorems being proved.
+ 
+
+Extra Credit (3 points):Write a function (snf s) which takes any FOL sentence and returns the list of equivalent 
+SNF clauses. Of course, this requires the design and implementation of a representation for any FOL sentence.
