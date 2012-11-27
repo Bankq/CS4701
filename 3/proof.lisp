@@ -24,8 +24,6 @@
                      (t (progn
                           ;; (print result)
                           (cons (list trail target result) (resolute kb result resolution))))))))))
-                          
-
 
 (defun resolute-clause (trail target)
   (block outer
@@ -51,9 +49,7 @@
     (car (sort l #'(lambda (a b) (< (clause-length a) (clause-length b)))))))
 
 (defun clause-length (l)
-  (if (or-clause-p l) 
-      (length (cdr l))
-      1))
+  (length (listify l)))
 
 (defun listify (c)
   (cond ((or-clause-p c)
@@ -136,14 +132,22 @@
         (t nil)))
                    
 (defun varp (x)
-  (and (symbolp x) (equal #\= (elt (symbol-name x) 0))))
+  (cond ((null x) nil)
+        ((symbolp x) 
+         (equal #\= (elt (symbol-name x) 0)))
+        (t (and (special-p (car x))
+                (varp (cadr x))))))
 
+(defun special-p (x)
+  (and (symbolp x)
+       (equal #\_ (elt (symbol-name x) 0))))
+
+;; TODO
 (defun snf (fol)
-  ""
   fol)
 
-
-(defparameter *test-kb*  '((or (~ (american =x)) (~ (weapon =y)) (~ (sells =x =y =z)) (~ (hostile =z)) (criminal =x))
+;; CONST VARIABLES
+(defparameter *test-kb-a*  '((or (~ (american =x)) (~ (weapon =y)) (~ (sells =x =y =z)) (~ (hostile =z)) (criminal =x))
                            (american West)
                            (or (~ (missle =x)) (weapon =x))
                            (missle M1)
@@ -152,9 +156,9 @@
                            (or (~ (enemy =x America)) (hostile =x))
                            (enemy Foo America)))
 
-(defparameter *test-target* '(~ (criminal West)))
+(defparameter *test-target-a* '(~ (criminal West)))
 
-(defparameter *a* '((or (ws =x) (sd =x))
+(defparameter *test-kb-b* '((or (ws =x) (sd =x))
                     (or (~ (ws =y)) (~ (likes =y Waves)))
                     (or (~ (ws =z)) (likes =z Warm))
                     (or (~ (likes Laura =w)) (~ (likes Jacob =w)))
@@ -162,11 +166,13 @@
                     (likes Jacob Warm)
                     (likes Jacob Waves)))
 
-(defparameter *b* '(or (~ (sd =v)) (ws =v)))
-(defparameter *c* '((or (ws =x) (sd =x))))
+(defparameter *test-target-b* '(or (~ (sd =v)) (ws =v)))
 
-(defun test ()
-  (loop for a in (listify *a*) do
-       (loop for b in (listify *c*) do
-          (if (equal a b)
-              (return 1)))))
+
+(defparameter *test-kb-c* '((or (~ (e =x)) (v =x) (s (_f =x)))
+                            (or (~ (e =x)) (v =x) (c (_f =x)))
+                            (p d)
+                            (e d)
+                            (or (~ (s d =y)) (p =y))
+                            (or (~ (p =z)) (~ (v =z)))))
+(defparameter *test-target-c* '(or (~ (p =w)) (~ (c =w))))
