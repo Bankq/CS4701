@@ -242,7 +242,10 @@
 (defun test ()
   "TEST ALL 3 CASES TOGETHER: IF get (T T T) then pass"
   (loop for result in
-       (mapcar #'(lambda (x) (caddr (car (last x))))
+       (mapcar #'(lambda (x) 
+                   (if (consp x) ;if x is NIL then fail
+                       (caddr (car (last x)))
+                       t))
                (list (atp *test-kb-a* *test-target-a*)
                      (atp *test-kb-b* *test-target-b*)
                      (atp *test-kb-c* *test-target-c*)))
